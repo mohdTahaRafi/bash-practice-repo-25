@@ -2,3 +2,32 @@
 
 # Removes all files written in .gitignore of any git repository (multiple) present inside current directory
 # To find list of all git repos inside current directory you can use: "find . -name .git -type d -prune"
+
+# Function to check if a required command is available
+
+# Function to check if a required command(Good Practise)
+require() {
+    command -v "$1" >/dev/null 2>&1 || { echo "Error: $1 is not installed." >&2; exit 1; }
+}
+
+# Ensure required commands are available by calling above function
+require find
+require xargs
+require git
+
+# Find all Git repositories in the current directory
+find . -name .git -type d -prune | while read -r git_dir; do
+    repo_dir=$(dirname "$git_dir")
+    gitignore_file="$repo_dir/.gitignore"
+
+    # Check if .gitignore exists
+    if [[ -f "$gitignore_file" ]]; then
+        echo "Processing .gitignore in $repo_dir"
+
+        # Remove all files listed in .gitignore
+        git -C "$repo_dir" ls-files --ignored --exclude-standard | xargs -d '\n' rm -f
+        echo "Removed files listed in $gitignore_file"
+    else
+        echo "No .gitignore found in $repo_dir"
+    fi
+done
